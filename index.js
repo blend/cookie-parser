@@ -43,34 +43,35 @@ function cookieParser (secret, options) {
     }
 
     var cookies = req.headers.cookie
-    var secrets = (() => {
-      if (!secret) return []
-      else if (Array.isArray(secret)) return secret
-      else if (typeof secret === "function") return [secret(req)]
-      else return [secret]
-    })()
 
-    req.secret = secrets[0]
-    req.cookies = Object.create(null)
-    req.signedCookies = Object.create(null)
+    function parseCookies(err, secrets) {
+      req.secret = secrets[0]
+      req.cookies = Object.create(null)
+      req.signedCookies = Object.create(null)
 
-    // no cookies
-    if (!cookies) {
-      return next()
+      // no cookies
+      if (!cookies) {
+        return next()
+      }
+
+      req.cookies = cookie.parse(cookies, options)
+
+      // parse signed cookies
+      if (secrets.length !== 0) {
+        req.signedCookies = signedCookies(req.cookies, secrets)
+        req.signedCookies = JSONCookies(req.signedCookies)
+      }
+
+      // parse JSON cookies
+      req.cookies = JSONCookies(req.cookies)
+
+      next()
     }
 
-    req.cookies = cookie.parse(cookies, options)
-
-    // parse signed cookies
-    if (secrets.length !== 0) {
-      req.signedCookies = signedCookies(req.cookies, secrets)
-      req.signedCookies = JSONCookies(req.signedCookies)
-    }
-
-    // parse JSON cookies
-    req.cookies = JSONCookies(req.cookies)
-
-    next()
+    if (!secret) parseCookies(null, [])
+    else if (Array.isArray(secret)) parseCookies(null, secret)
+    else if (typeof secret === "function") secret(req, parseCookies)
+    else parseCookies(null, [secret])
   }
 }
 
