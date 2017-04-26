@@ -43,9 +43,12 @@ function cookieParser (secret, options) {
     }
 
     var cookies = req.headers.cookie
-    var secrets = !secret || Array.isArray(secret)
-      ? (secret || [])
-      : [secret]
+    var secrets = (() => {
+      if (!secret) return []
+      else if (Array.isArray(secret)) return secret
+      else if (typeof secret === "function") return [secret(req)]
+      else return [secret]
+    })()
 
     req.secret = secrets[0]
     req.cookies = Object.create(null)
