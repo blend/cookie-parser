@@ -49,10 +49,9 @@ function cookieParser (secret, options) {
         return next()
       }
 
-      let secrets
-      if (!secret) secrets = []
-      else if (Array.isArray(secret)) secrets = secret
-      else secrets = [secret]
+      var secrets = !secret || Array.isArray(secret)
+        ? (secret || [])
+        : [secret]
 
       req.secret = secrets[0]
       req.cookies = Object.create(null)
