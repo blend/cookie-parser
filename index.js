@@ -44,7 +44,16 @@ function cookieParser (secret, options) {
 
     var cookies = req.headers.cookie
 
-    function parseCookies(err, secrets) {
+    function parseCookies(err, secret) {
+      if (err) {
+        return next()
+      }
+
+      let secrets
+      if (!secret) secrets = []
+      else if (Array.isArray(secret)) secrets = secret
+      else secrets = [secret]
+
       req.secret = secrets[0]
       req.cookies = Object.create(null)
       req.signedCookies = Object.create(null)
@@ -68,10 +77,8 @@ function cookieParser (secret, options) {
       next()
     }
 
-    if (!secret) parseCookies(null, [])
-    else if (Array.isArray(secret)) parseCookies(null, secret)
-    else if (typeof secret === "function") secret(req, parseCookies)
-    else parseCookies(null, [secret])
+    if (typeof secret === "function") return secret(req, parseCookies)
+    else return parseCookies(null, secret)
   }
 }
 
